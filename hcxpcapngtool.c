@@ -359,6 +359,8 @@ static bool ancientdumpfileformat;
 static bool radiotappresent;
 static bool ieee80211flag;
 static bool framehasfcs;
+static bool ifaceerror;
+static bool linktypeerror;
 
 static char rssi;
 static int interfacechannel;
@@ -5130,8 +5132,12 @@ else if(linktype == DLT_NULL)
 	}
 else
 	{
-	fprintf(stdout, "unsupported network type %u\n", linktype);
-	if(fh_log != NULL) fprintf(fh_log, "unsupported network type %u: %ld\n", linktype, rawpacketcount);
+	if(linktypeerror == false)
+		{
+		fprintf(stdout, "unsupported network type %u detected\n", linktype);
+		if(fh_log != NULL) fprintf(fh_log, "unsupported network type %u: %ld detected\n", linktype, rawpacketcount);
+		linktypeerror = true;
+		}
 	return;
 	}
 
@@ -5174,6 +5180,8 @@ static uint64_t timestampcap;
 static uint8_t packet[MAXPACPSNAPLEN];
 
 ancientdumpfileformat = true;
+ifaceerror = false;
+linktypeerror = false;
 magicblockcount = 0;
 fprintf(stdout, "%s %s reading from %s...\n", basename(eigenname), VERSION_TAG, basename(pcapinname));
 iface = 1;
@@ -5479,11 +5487,12 @@ static interface_description_block_t *pcapngidb;
 static packet_block_t *pcapngpb;
 static enhanced_packet_block_t *pcapngepb;
 static custom_block_t *pcapngcb;
-
 static int interfaceid[MAX_INTERFACE_ID];
 static uint8_t pcpngblock[2 *MAXPACPSNAPLEN];
 static uint8_t packet[MAXPACPSNAPLEN];
 
+ifaceerror = false;
+linktypeerror = false;
 magicblockcount = 0;
 ancientdumpfileformat = false;
 fprintf(stdout, "%s %s reading from %s...\n", basename(eigenname), VERSION_TAG, basename(pcapinname));
@@ -5635,8 +5644,12 @@ while(1)
 		if(iface >= MAX_INTERFACE_ID)
 			{
 			pcapreaderrors++;
-			fprintf(stdout, "maximum of supported interfaces reached: %u\n", iface);
-			if(fh_log != NULL) fprintf(fh_log, "maximum of supported interfaces reached: %u\n", iface);
+			if(ifaceerror == false)
+				{
+				fprintf(stdout, "maximum of supported interfaces reached: %u\n", iface);
+				if(fh_log != NULL) fprintf(fh_log, "maximum of supported interfaces reached: %u\n", iface);
+				ifaceerror = true;
+				}
 			continue;
 			}
 		dltlinktype[iface] = pcapngidb->linktype;
